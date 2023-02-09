@@ -30,8 +30,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: '{{service.name}}_{{service_instance.name}}'
-      Cpu: !FindInMap [TaskSize, '{{service_instance.inputs.task_size}}', Cpu]
-      Memory: !FindInMap [TaskSize, '{{service_instance.inputs.task_size}}', Memory]
+      Cpu: !FindInMap [ TaskSize, '{{service_instance.inputs.task_size}}', Cpu ]
+      Memory: !FindInMap [ TaskSize, '{{service_instance.inputs.task_size}}', Memory ]
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -39,16 +39,16 @@ Resources:
       TaskRoleArn: !Ref "AWS::NoValue"
       ContainerDefinitions:
         - Name: '{{service_instance.name}}'
-          Cpu: !FindInMap [TaskSize, '{{service_instance.inputs.task_size}}', Cpu]
-          Memory: !FindInMap [TaskSize, '{{service_instance.inputs.task_size}}', Memory]
+          Cpu: !FindInMap [ TaskSize, '{{service_instance.inputs.task_size}}', Cpu ]
+          Memory: !FindInMap [ TaskSize, '{{service_instance.inputs.task_size}}', Memory ]
           Image: '{{service_instance.inputs.image}}'
           Environment:
-          {% set env_vars = service_instance.inputs.env_vars.split(';') %}
-          {% for env_var in  env_vars %}
-          {% set env_name, env_value = env_var.split('=') %}
-            - Name: '{{ env_name|trim }}'
-              Value: '{{ env_value|trim }}'
-          {% endfor %}
+          { % set env_vars = service_instance.inputs.env_vars.split(';') % }
+          { % for env_var in  env_vars % }
+          { % set env_name, env_value = env_var.split('=') % }
+          - Name: '{{ env_name|trim }}'
+            Value: '{{ env_value|trim }}'
+          { % endfor % }
           PortMappings:
             - ContainerPort: '{{service_instance.inputs.port}}'
           LogConfiguration:
@@ -66,9 +66,11 @@ Resources:
     Type: AWS::ECS::Service
     DependsOn: LoadBalancerRule
     Properties:
-      ServiceName: '{{service.name}}_{{service_instance.name}}'
+      ServiceName: '{{service.name}}_{{service_instance.name}}_spot'
       Cluster: '{{environment.outputs.ClusterName}}'
-      LaunchType: FARGATE
+      CapacityProviderStrategy:
+        - CapacityProvider: FARGATE_SPOT
+          Weight: 1
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 75
@@ -135,7 +137,7 @@ Resources:
 
   EcsSecurityGroupIngressFromALB:
     Type: AWS::EC2::SecurityGroupIngress
-    Properties: 
+    Properties:
       Description: Ingress from the ALB
       GroupId: '{{environment.outputs.ContainerSecurityGroup}}'
       IpProtocol: -1
@@ -151,39 +153,39 @@ Resources:
       GroupDescription: Access to the public facing load balancer
       VpcId: '{{environment.outputs.VpcId}}'
       SecurityGroupIngress:
-          {% if 'public' == service_instance.inputs.scope %}
-          # Allow access to ALB from anywhere on the internet
-          - CidrIp: 0.0.0.0/0
-            IpProtocol: -1
-          {% else %}
-          # Allow access only from the VPC CIDR
-          - CidrIp: '{{environment.outputs.VpcCIDR}}'
-            IpProtocol: -1
-            FromPort: '{{service_instance.inputs.port}}'
-            ToPort: '{{service_instance.inputs.port}}'
-          {% endif %}
+        { % if 'public' == service_instance.inputs.scope % }
+        # Allow access to ALB from anywhere on the internet
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: -1
+        { % else % }
+        # Allow access only from the VPC CIDR
+        - CidrIp: '{{environment.outputs.VpcCIDR}}'
+          IpProtocol: -1
+          FromPort: '{{service_instance.inputs.port}}'
+          ToPort: '{{service_instance.inputs.port}}'
+        { % endif % }
 
-  {% if 'public' == service_instance.inputs.scope %}
-  {% set scheme = 'internet-facing' %}
-  {% set port = '80' %}
-  {% else %}
-  {% set scheme = 'internal' %}
-  {% set port = service_instance.inputs.port %}
-  {% endif %}
+  { % if 'public' == service_instance.inputs.scope % }
+  { % set scheme = 'internet-facing' % }
+  { % set port = '80' % }
+  { % else % }
+  { % set scheme = 'internal' % }
+  { % set port = service_instance.inputs.port % }
+  { % endif % }
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Scheme: '{{scheme}}'
       LoadBalancerAttributes:
-      - Key: idle_timeout.timeout_seconds
-        Value: '30'
+        - Key: idle_timeout.timeout_seconds
+          Value: '30'
       Subnets:
         # The load balancer is placed into the public subnets, so that traffic
         # from the internet can reach the load balancer directly via the internet gateway
         - '{{environment.outputs.PublicSubnetOne}}'
         - '{{environment.outputs.PublicSubnetTwo}}'
         - '{{environment.outputs.PublicSubnetThree}}'
-      SecurityGroups: [!Ref 'LoadBalancerSG']
+      SecurityGroups: [ !Ref 'LoadBalancerSG' ]
 
   LoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -196,7 +198,7 @@ Resources:
       LoadBalancerArn: !Ref 'LoadBalancer'
       Port: '{{port}}'
       Protocol: HTTP
-    
+
   RecordSet:
     Type: AWS::Route53::RecordSet
     DependsOn:
