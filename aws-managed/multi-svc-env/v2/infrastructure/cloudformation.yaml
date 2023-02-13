@@ -16,16 +16,16 @@ Resources:
     Properties:
       EnableDnsSupport: true
       EnableDnsHostnames: true
-      CidrBlock: !FindInMap ['SubnetConfig', 'VPC', 'CIDR']
+      CidrBlock: !FindInMap [ 'SubnetConfig', 'VPC', 'CIDR' ]
   PublicSubnetOne:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone:
         Fn::Select:
           - 0
-          - Fn::GetAZs: {Ref: 'AWS::Region'}
+          - Fn::GetAZs: { Ref: 'AWS::Region' }
       VpcId: !Ref 'VPC'
-      CidrBlock: !Select [0, !Cidr [!FindInMap ['SubnetConfig', 'VPC', 'CIDR'], 3, 8]]
+      CidrBlock: !Select [ 0, !Cidr [ !FindInMap [ 'SubnetConfig', 'VPC', 'CIDR' ], 3, 8 ] ]
       MapPublicIpOnLaunch: true
   PublicSubnetTwo:
     Type: AWS::EC2::Subnet
@@ -33,9 +33,9 @@ Resources:
       AvailabilityZone:
         Fn::Select:
           - 1
-          - Fn::GetAZs: {Ref: 'AWS::Region'}
+          - Fn::GetAZs: { Ref: 'AWS::Region' }
       VpcId: !Ref 'VPC'
-      CidrBlock: !Select [1, !Cidr [!FindInMap ['SubnetConfig', 'VPC', 'CIDR'], 3, 8]]
+      CidrBlock: !Select [ 1, !Cidr [ !FindInMap [ 'SubnetConfig', 'VPC', 'CIDR' ], 3, 8 ] ]
       MapPublicIpOnLaunch: true
   PublicSubnetThree:
     Type: AWS::EC2::Subnet
@@ -43,9 +43,9 @@ Resources:
       AvailabilityZone:
         Fn::Select:
           - 2
-          - Fn::GetAZs: {Ref: 'AWS::Region'}
+          - Fn::GetAZs: { Ref: 'AWS::Region' }
       VpcId: !Ref 'VPC'
-      CidrBlock: !Select [2, !Cidr [!FindInMap ['SubnetConfig', 'VPC', 'CIDR'], 3, 8]]
+      CidrBlock: !Select [ 2, !Cidr [ !FindInMap [ 'SubnetConfig', 'VPC', 'CIDR' ], 3, 8 ] ]
       MapPublicIpOnLaunch: true
   # Setup networking resources for the public subnets. Containers
   # in the public subnets have public IP addresses and the routing table
@@ -89,7 +89,7 @@ Resources:
     Properties:
       CapacityProviders:
         - FARGATE_SPOT
-      DefaultCapacityProviderStrategy: 
+      DefaultCapacityProviderStrategy:
         - CapacityProvider: FARGATE_SPOT
           Weight: 1
   # A security group for the containers we will run in Fargate.
@@ -112,7 +112,7 @@ Resources:
               Service:
                 - ecs.amazonaws.com
                 - ecs-tasks.amazonaws.com
-            Action: ['sts:AssumeRole']
+            Action: [ 'sts:AssumeRole' ]
       Path: /
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
@@ -122,7 +122,7 @@ Resources:
   DnsHostedZone:
     Type: AWS::Route53::HostedZone
     Properties:
-      Name: !FindInMap ['SubnetConfig', 'DNS', 'Hostname']
+      Name: !FindInMap [ 'SubnetConfig', 'DNS', 'Hostname' ]
       HostedZoneConfig:
         Comment: Private hosted zone
       VPCs:
@@ -141,7 +141,7 @@ Resources:
       Type: String
       DataType: text
       Tier: Advanced
-      Value: !Sub "receivers:  \n  prometheus:\n    config:\n      global:\n        scrape_interval: 1m\n        scrape_timeout: 10s\n      scrape_configs:\n      - job_name: \"appmesh-envoy\"\n        sample_limit: 10000\n        metrics_path: /stats/prometheus\n        static_configs:\n          - targets: ['0.0.0.0:9901']\n  awsecscontainermetrics:\n    collection_interval: 15s\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:55681\n  awsxray:\n    endpoint: 0.0.0.0:2000\n    transport: udp\n  statsd:\n    endpoint: 0.0.0.0:8125\n    aggregation_interval: 60s\nprocessors:\n  batch/traces:\n    timeout: 1s\n    send_batch_size: 50\n  batch/metrics:\n    timeout: 60s\n  filter:\n    metrics:\n      include:\n        match_type: strict\n        metric_names:\n          - ecs.task.memory.utilized\n          - ecs.task.memory.reserved\n          - ecs.task.memory.usage\n          - ecs.task.cpu.utilized\n          - ecs.task.cpu.reserved\n          - ecs.task.cpu.usage.vcpu\n          - ecs.task.network.rate.rx\n          - ecs.task.network.rate.tx\n          - ecs.task.storage.read_bytes\n          - ecs.task.storage.write_bytes\nexporters:\n  awsxray:\n  awsprometheusremotewrite:\n    endpoint: ${PrometheusWorkspace.PrometheusEndpoint}api/v1/remote_write\n    aws_auth:\n      region: ${AWS::Region}\n      service: \"aps\"\n    resource_to_telemetry_conversion:\n      enabled: true\n  awsemf:\n    namespace: ECS/AWSOtel/Application\n    log_group_name: '/ecs/application/metrics/{ClusterName}'\n    log_stream_name: '/{TaskDefinitionFamily}/{TaskId}'\n    resource_to_telemetry_conversion:\n      enabled: true\n    dimension_rollup_option: NoDimensionRollup\n    metric_declarations:\n      - dimensions: [ [ ClusterName, TaskDefinitionFamily ] ]\n        metric_name_selectors:\n          - \"^envoy_http_downstream_rq_(total|xx)$\"\n          - \"^envoy_cluster_upstream_cx_(r|t)x_bytes_total$\"\n          - \"^envoy_cluster_membership_(healthy|total)$\"\n          - \"^envoy_server_memory_(allocated|heap_size)$\"\n          - \"^envoy_cluster_upstream_cx_(connect_timeout|destroy_local_with_active_rq)$\"\n          - \"^envoy_cluster_upstream_rq_(pending_failure_eject|pending_overflow|timeout|per_try_timeout|rx_reset|maintenance_mode)$\"\n          - \"^envoy_http_downstream_cx_destroy_remote_active_rq$\"\n          - \"^envoy_cluster_upstream_flow_control_(paused_reading_total|resumed_reading_total|backed_up_total|drained_total)$\"\n          - \"^envoy_cluster_upstream_rq_retry$\"\n          - \"^envoy_cluster_upstream_rq_retry_(success|overflow)$\"\n          - \"^envoy_server_(version|uptime|live)$\"\n        label_matchers:\n          - label_names:\n              - container_name\n            regex: ^envoy$\n      - dimensions: [ [ ClusterName, TaskDefinitionFamily, envoy_http_conn_manager_prefix, envoy_response_code_class ] ]\n        metric_name_selectors:\n          - \"^envoy_http_downstream_rq_xx$\"\n        label_matchers:\n          - label_names:\n              - container_name\n            regex: ^envoy$\n  logging:\n    loglevel: debug\nextensions:\n  health_check:\n  pprof:\n    endpoint: :1888\n  zpages:\n    endpoint: :55679\nservice:\n  extensions: [pprof, zpages, health_check]\n  pipelines:\n    metrics:\n      receivers: [otlp, statsd]\n      processors: [batch/metrics]\n      exporters: [logging, awsprometheusremotewrite, awsemf]\n    metrics/envoy:\n      receivers: [prometheus]\n      processors: [batch/metrics]\n      exporters: [logging, awsprometheusremotewrite, awsemf]\n    metrics/ecs:\n      receivers: [awsecscontainermetrics]\n      processors: [filter, batch/metrics]\n      exporters: [logging, awsprometheusremotewrite, awsemf]\n    traces:\n      receivers: [otlp, awsxray]\n      processors: [batch/traces]\n      exporters: [awsxray]\n"
+      Value: !Sub "receivers:  \n  prometheus:\n    config:\n      global:\n        scrape_interval: 1m\n        scrape_timeout: 10s\n      scrape_configs:\n      - job_name: \"appmesh-envoy\"\n        sample_limit: 10000\n        metrics_path: /stats/prometheus\n        static_configs:\n          - targets: ['0.0.0.0:9901']\n  awsecscontainermetrics:\n    collection_interval: 15s\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:55681\n  awsxray:\n    endpoint: 0.0.0.0:2000\n    transport: udp\n  statsd:\n    endpoint: 0.0.0.0:8125\n    aggregation_interval: 60s\nprocessors:\n  batch/traces:\n    timeout: 1s\n    send_batch_size: 50\n  batch/metrics:\n    timeout: 60s\n  filter:\n    metrics:\n      include:\n        match_type: strict\n        metric_names:\n          - ecs.task.memory.utilized\n          - ecs.task.memory.reserved\n          - ecs.task.memory.usage\n          - ecs.task.cpu.utilized\n          - ecs.task.cpu.reserved\n          - ecs.task.cpu.usage.vcpu\n          - ecs.task.network.rate.rx\n          - ecs.task.network.rate.tx\n          - ecs.task.storage.read_bytes\n          - ecs.task.storage.write_bytes\nexporters:\n  awsxray:\n  prometheusremotewrite:\n    endpoint: ${PrometheusWorkspace.PrometheusEndpoint}api/v1/remote_write\n    aws_auth:\n      region: ${AWS::Region}\n      service: \"aps\"\n    resource_to_telemetry_conversion:\n      enabled: true\n  awsemf:\n    namespace: ECS/AWSOtel/Application\n    log_group_name: '/ecs/application/metrics/{ClusterName}'\n    log_stream_name: '/{TaskDefinitionFamily}/{TaskId}'\n    resource_to_telemetry_conversion:\n      enabled: true\n    dimension_rollup_option: NoDimensionRollup\n    metric_declarations:\n      - dimensions: [ [ ClusterName, TaskDefinitionFamily ] ]\n        metric_name_selectors:\n          - \"^envoy_http_downstream_rq_(total|xx)$\"\n          - \"^envoy_cluster_upstream_cx_(r|t)x_bytes_total$\"\n          - \"^envoy_cluster_membership_(healthy|total)$\"\n          - \"^envoy_server_memory_(allocated|heap_size)$\"\n          - \"^envoy_cluster_upstream_cx_(connect_timeout|destroy_local_with_active_rq)$\"\n          - \"^envoy_cluster_upstream_rq_(pending_failure_eject|pending_overflow|timeout|per_try_timeout|rx_reset|maintenance_mode)$\"\n          - \"^envoy_http_downstream_cx_destroy_remote_active_rq$\"\n          - \"^envoy_cluster_upstream_flow_control_(paused_reading_total|resumed_reading_total|backed_up_total|drained_total)$\"\n          - \"^envoy_cluster_upstream_rq_retry$\"\n          - \"^envoy_cluster_upstream_rq_retry_(success|overflow)$\"\n          - \"^envoy_server_(version|uptime|live)$\"\n        label_matchers:\n          - label_names:\n              - container_name\n            regex: ^envoy$\n      - dimensions: [ [ ClusterName, TaskDefinitionFamily, envoy_http_conn_manager_prefix, envoy_response_code_class ] ]\n        metric_name_selectors:\n          - \"^envoy_http_downstream_rq_xx$\"\n        label_matchers:\n          - label_names:\n              - container_name\n            regex: ^envoy$\n  logging:\n    loglevel: debug\nextensions:\n  health_check:\n  pprof:\n    endpoint: :1888\n  zpages:\n    endpoint: :55679\nservice:\n  extensions: [pprof, zpages, health_check]\n  pipelines:\n    metrics:\n      receivers: [otlp, statsd]\n      processors: [batch/metrics]\n      exporters: [logging, prometheusremotewrite, awsemf]\n    metrics/envoy:\n      receivers: [prometheus]\n      processors: [batch/metrics]\n      exporters: [logging, prometheusremotewrite, awsemf]\n    metrics/ecs:\n      receivers: [awsecscontainermetrics]\n      processors: [filter, batch/metrics]\n      exporters: [logging, prometheusremotewrite, awsemf]\n    traces:\n      receivers: [otlp, awsxray]\n      processors: [batch/traces]\n      exporters: [awsxray]\n"
       Description: SSM Parameter for the Opentelemetry agent config
   # This is a role to allow ECS task to call AWS services on your behalf.
   ECSTaskRole:
@@ -151,8 +151,8 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: ['ecs-tasks.amazonaws.com']
-            Action: ['sts:AssumeRole']
+              Service: [ 'ecs-tasks.amazonaws.com' ]
+            Action: [ 'sts:AssumeRole' ]
       Policies:
         - PolicyName: AWSOpenTelemetryPolicy
           PolicyDocument:
@@ -211,7 +211,7 @@ Outputs:
     Value: !Ref 'ServiceMesh'
   MeshName:
     Description: The mesh Name
-    Value: !GetAtt ['ServiceMesh', 'MeshName']
+    Value: !GetAtt [ 'ServiceMesh', 'MeshName' ]
   ECSTaskRole:
     Description: The ARN of the ECS task role
     Value: !GetAtt 'ECSTaskRole.Arn'
