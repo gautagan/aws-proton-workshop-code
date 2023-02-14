@@ -1,11 +1,11 @@
 {
-  "deploymentId" : "f5ce8e57-4724-4038-b9f8-3291c745298a",
+  "deploymentId" : "8e95f3b7-9394-4282-9c0a-a2a0e1e58ae4",
   "isResourceDeleted" : false,
   "resourceMetadata" : {
     "arn" : "arn:aws:proton:us-east-1:071924539950:service/sample-lambda-function-template/service-instance/sample-lambda-function-template",
     "templateArn" : "arn:aws:proton:us-east-1:071924539950:service-template/sample-lambda-function-template",
     "templateMajorVersion" : "1",
-    "templateMinorVersion" : "1",
+    "templateMinorVersion" : "2",
     "environmentArn" : "arn:aws:proton:us-east-1:071924539950:environment/sample-vpc-environment-template"
   }
 }
