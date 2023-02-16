@@ -1,3 +1,3 @@
 output "lambda_arn" {
-  value = var.environment.outputs.subnet_id
+  value = var.environment.outputs
 }
