@@ -31,7 +31,7 @@ resource "aws_lambda_function" "my_lambda" {
   runtime = var.service_instance.inputs.lambda_runtime
 
   vpc_config {
-    subnet_ids         = ["subnet-0610ee712a9bd4b94"]
+    subnet_ids         = "subnet-0610ee712a9bd4b94"
     security_group_ids = [var.environment.outputs.security_group_id]
   }
 }

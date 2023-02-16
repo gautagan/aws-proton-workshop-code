@@ -1,3 +1,3 @@
 output "lambda_arn" {
-  value = "whocares"
+  value = var.environment.outputs.subnet_id
 }
