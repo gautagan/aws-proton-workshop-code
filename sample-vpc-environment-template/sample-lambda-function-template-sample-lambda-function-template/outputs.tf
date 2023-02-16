@@ -7,5 +7,5 @@ If the resource is no longer accessible within AWS Proton, it may have been dele
 */
 
 output "lambda_arn" {
-  value = "whocares"
+  value = var.environment.outputs.subnet_id
 }
