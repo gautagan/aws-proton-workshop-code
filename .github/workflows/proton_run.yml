@@ -194,18 +194,33 @@ jobs:
         id: tf_get_outputs
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          # Get outputs as json
-          outputs_json=$(terraform output -json)
-          echo "Echoing outputs_json"
-          echo $outputs_json
-          # The outputs parameters expects a list of key=keyName,valueString=value key=key2Name,valueString=value2 etc...
-          # So here we convert the output json into a shell array
-          # NOTE: This will probably not play nicely with complex output objects (non primitives)
+               # Get outputs as json
+               outputs_json=$(terraform output -json)
+               echo "Echoing outputs_json"
+               echo $outputs_json
+               # The outputs parameters expects a list of key=keyName,valueString=value key=key2Name,valueString=value2 etc...
+               # So here we convert the output json into a shell array
+               # NOTE: This will probably not play nicely with complex output objects (non primitives)
+               
+               formatted_outputs=$(echo $outputs_json | jq -r "to_entries|map(\"key=\(.key),valueString=\(.value.value|tostring)\")|.[]")
+               echo "Echoing formatted_outputs"
+               echo $formatted_outputs
+          #          echo "::set-output name=tf_outputs::$formatted_outputs"
+               key_value_pairs=$formatted_outputs
           
-          formatted_outputs=$(echo $outputs_json | jq -r "to_entries|map(\"key=\(.key),valueString=\(.value.value|tostring)\")|.[]")
-          echo "Echoing formatted_outputs"
-          echo $formatted_outputs
-          echo "::set-output name=tf_outputs::$formatted_outputs"
+          # Define the function to be applied to each pair
+               my_function() {
+               key=$(echo "$1" | cut -d' ' -f1)
+               value=$(echo "$1" | cut -d' ' -f2)
+          #  echo $key
+          #  echo $value
+               echo "${key}=${value}" >> $GITHUB_OUTPUT
+               }
+          
+          # Loop through each key value pair and apply the function
+               for pair in $key_value_pairs; do
+               my_function "$pair"
+               done
 
   notify-proton:
     name: 'Notify Proton'
