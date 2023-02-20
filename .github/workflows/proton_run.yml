@@ -193,8 +193,6 @@ jobs:
       - name: Terraform Get Outputs
         id: tf_get_outputs
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        env:
-          TF_LOG: TRACE
         run: |
           # Get outputs as json
           outputs_json=$(terraform output -json)
@@ -204,7 +202,7 @@ jobs:
           # So here we convert the output json into a shell array
           # NOTE: This will probably not play nicely with complex output objects (non primitives)
           
-          formatted_outputs=( $(echo $outputs_json | jq -r "to_entries|map(\"key=\(.key),valueString=\(.value.value|tostring)\")|.[]") )
+          formatted_outputs=$(echo $outputs_json | jq -r "to_entries|map(\"key=\(.key),valueString=\(.value.value|tostring)\")|.[]")
           echo "Echoing formatted_outputs"
           echo $formatted_outputs
           echo "::set-output name=tf_outputs::$formatted_outputs"
@@ -241,8 +239,6 @@ jobs:
       - name: Notify Proton Success
         id: notify_success
         if: needs.terraform.result == 'success'
-        env:
-          TF_LOG: TRACE
         run: |
           # Notify proton
            aws proton notify-resource-deployment-status-change --region ${{ needs.get-deployment-data.outputs.proton_region }} --resource-arn ${{ needs.get-deployment-data.outputs.resource_arn }} --status SUCCEEDED --deployment-id ${{ needs.get-deployment-data.outputs.deployment_id }} --outputs ${{ needs.terraform.outputs.tf_outputs }}
