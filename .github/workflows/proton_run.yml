@@ -206,21 +206,7 @@ jobs:
           echo "Echoing formatted_outputs"
           echo $formatted_outputs
           #          echo "::set-output name=tf_outputs::$formatted_outputs"
-          key_value_pairs=$formatted_outputs
-          
-          # Define the function to be applied to each pair
-          my_function() {
-          key=$(echo "$1" | cut -d' ' -f1)
-          value=$(echo "$1" | cut -d' ' -f2)
-          #  echo $key
-          #  echo $value
-          echo "${key}=${value}" >> $GITHUB_OUTPUT
-          }
-          
-          # Loop through each key value pair and apply the function
-          for pair in $key_value_pairs; do
-          my_function "$pair"
-          done
+          echo "tf_outputs=$formatted_outputs" >> $GITHUB_OUTPUT
 
   notify-proton:
     name: 'Notify Proton'
