@@ -195,10 +195,12 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           terraform output -json | jq 'to_entries | map({key:.key, valueString:.value.value})' > output.json
+          pwd
+          ls
       - uses: actions/upload-artifact@v2
         with:
           name: my-outputs
-          path: ./output.json
+          path: output.json
   
   notify-proton:
     name: 'Notify Proton'
