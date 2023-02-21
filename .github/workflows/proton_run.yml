@@ -241,7 +241,7 @@ jobs:
         run: |
           # Notify proton
            ls /home/runner/work/aws-proton-workshop-code/aws-proton-workshop-code
-           aws proton notify-resource-deployment-status-change --region ${{ needs.get-deployment-data.outputs.proton_region }} --resource-arn ${{ needs.get-deployment-data.outputs.resource_arn }} --status SUCCEEDED --deployment-id ${{ needs.get-deployment-data.outputs.deployment_id }} --outputs file:///home/runner/work/aws-proton-workshop-code/aws-proton-workshop-code/outputs.json
+           aws proton notify-resource-deployment-status-change --region ${{ needs.get-deployment-data.outputs.proton_region }} --resource-arn ${{ needs.get-deployment-data.outputs.resource_arn }} --status SUCCEEDED --deployment-id ${{ needs.get-deployment-data.outputs.deployment_id }} --outputs file:///home/runner/work/aws-proton-workshop-code/aws-proton-workshop-code/output.json
            echo "Notify success!"
 
       - name: Notify Proton Failure
