@@ -194,13 +194,13 @@ jobs:
         id: tf_get_outputs
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          terraform output -json | jq 'to_entries | map({key:.key, valueString:.value.value})' > output.json
+          terraform output -json | jq 'to_entries | map({key:.key, valueString:.value.value})' > /home/runner/work/aws-proton-workshop-code/aws-proton-workshop-code/output.json
           pwd
           ls
       - uses: actions/upload-artifact@v2
         with:
           name: my-outputs
-          path: /home/runner/work/aws-proton-workshop-code/aws-proton-workshop-code/sample-vpc-environment-template/output.json
+          path: /home/runner/work/aws-proton-workshop-code/aws-proton-workshop-code/output.json
   
   notify-proton:
     name: 'Notify Proton'
