@@ -1,9 +1,5 @@
 /*
-This file is managed by AWS Proton. Any changes made directly to this file will be overwritten the next time AWS Proton performs an update.
-
-To manage this resource, see AWS Proton Resource: arn:aws:proton:us-east-1:071924539950:service/sample-lambda-function-template/service-instance/sample-lambda-function-template
-
-If the resource is no longer accessible within AWS Proton, it may have been deleted and may require manual cleanup.
+This file is no longer managed by AWS Proton. The associated resource has been deleted in Proton.
 */
 
 output "lambda_arn" {
